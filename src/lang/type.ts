@@ -1,4 +1,4 @@
-import type { Callable } from "./callable.ts";
+import type { Callable, Instance } from "./callable.ts";
 
 export enum TokenType {
   // Single-character tokens.
@@ -48,6 +48,8 @@ export enum TokenType {
   FUNCTION = "FONCTION",
   RETURN = "RETURN",
   PRINT = "AFFICHER",
+  FOREACH = "FOREACH",
+  IN = "IN",
 
   EOF = "EOF",
 }
@@ -82,6 +84,7 @@ export enum ExpressionType {
   Call = "Call",
   Array = "Array",
   ArrayAccess = "ArrayAccess",
+  FieldAccess = "FieldAccess",
 }
 
 export type LiteralExpression = {
@@ -142,6 +145,28 @@ export type ArrayAccessExpression = {
   position: Position;
 };
 
+export type FieldAccessExpression = {
+  type: ExpressionType.FieldAccess;
+  object: Expression;
+  field: string;
+  position: Position;
+};
+
+export type FieldAssignmentExpression = {
+  type: "FieldAssignment";
+  object: Expression;
+  field: string;
+  value: Expression;
+  position: Position;
+};
+
+export type InstanceOfExpression = {
+  type: "InstanceOf";
+  object: Expression;
+  className: string;
+  position: Position;
+};
+
 export type Expression =
   | BinaryExpression
   | UnaryExpression
@@ -151,7 +176,10 @@ export type Expression =
   | CallExpression
   | ArrayExpression
   | ArrayAccessExpression
-  | VariableExpression;
+  | VariableExpression
+  | FieldAccessExpression
+  | FieldAssignmentExpression
+  | InstanceOfExpression;
 
 /**
  * Statement types
@@ -168,6 +196,9 @@ export enum StatementType {
   For = "For",
   Function = "Function",
   Return = "Return",
+  Foreach = "Foreach",
+  Class = "Class",
+  Method = "Method",
 }
 
 export type Program = {
@@ -236,6 +267,22 @@ export type ReturnStatement = {
   position: Position;
 };
 
+export type ForeachStatement = {
+  type: StatementType.Foreach;
+  variable: TokenIdentifier;
+  source: Expression;
+  body: Statement[];
+  position: Position;
+};
+
+export type ClassStatement = {
+  type: StatementType.Class;
+  name: TokenIdentifier;
+  parent: TokenIdentifier | null;
+  methods: FunctionStatement[];
+  position: Position;
+};
+
 export type Statement =
   | ExpressionStatement
   | PrintStatement
@@ -245,10 +292,13 @@ export type Statement =
   | ForStatement
   | FunctionStatement
   | ReturnStatement
-  | DeclarationStatement;
+  | DeclarationStatement
+  | ForeachStatement
+  | ClassStatement;
 
 export type StdOut = {
   push: (s: string) => void;
   clear: () => void;
 };
-export type Value = LiteralExpression["value"] | Callable | Value[] | void;
+export type MethodBound = { __method__: FunctionStatement; __instance__: Instance | null };
+export type Value = LiteralExpression["value"] | Callable | Value[] | Instance | MethodBound | void;

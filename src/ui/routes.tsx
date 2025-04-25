@@ -5,13 +5,15 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { ChallengePage } from "./pages/ChallengePage.tsx";
+import { LiveCodePage } from "./pages/LiveCode.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
+import { HomePage } from "./pages/HomePage.tsx";
 import { ChallengeDefinition } from "../type.challenge.ts";
 
 const rootRoute = createRootRoute({
   component: () => (
     <>
-      <div className="root">
+      <div className="flex h-screen w-full">
         <Sidebar />
         <Outlet />
       </div>
@@ -22,13 +24,7 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: function Index() {
-    return (
-      <div className="p-2">
-        <h3>Welcome Home!</h3>
-      </div>
-    );
-  },
+  component: HomePage,
 });
 
 export const challengeRoute = createRoute({
@@ -42,7 +38,19 @@ export const challengeRoute = createRoute({
   component: ChallengePage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, challengeRoute]);
+export const livecodeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/livecoding",
+  component: LiveCodePage,
+});
+
+export const documentationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/documentation",
+  component: LiveCodePage,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute]);
 
 export const router = createRouter({ routeTree });
 

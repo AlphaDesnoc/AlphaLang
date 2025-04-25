@@ -16,6 +16,8 @@ import {
   TokenIdentifier,
   TokenType,
   WhileStatement,
+  ForeachStatement,
+  ClassStatement,
 } from "./type.ts";
 
 let tokens: Token[] = [];
@@ -40,6 +42,9 @@ export function buildASTTree(t: Token[]): Program {
  */
 
 function statement(): Statement {
+  if (eat(TokenType.CLASS)) {
+    return classDeclarationStatement();
+  }
   if (eat(TokenType.FUNCTION)) {
     return funcDeclarationStatement();
   }
@@ -54,6 +59,9 @@ function statement(): Statement {
   }
   if (eat(TokenType.WHILE)) {
     return whileStatement();
+  }
+  if (eat(TokenType.FOREACH)) {
+    return foreachStatement();
   }
   if (eat(TokenType.FOR)) {
     return forStatement();
@@ -217,6 +225,46 @@ function blockStatement(
   };
 }
 
+function foreachStatement(): ForeachStatement {
+  const foreachToken = previous();
+  const identifier = eatOrFail([TokenType.IDENTIFIER], "Nom de variable attendu après FOREACH");
+  eatOrFail([TokenType.IN], "Mot-clé IN attendu après la variable dans FOREACH");
+  const source = expression();
+  const block = blockStatement([TokenType.END], "'FIN' attendu à la fin d'une boucle FOREACH");
+  return {
+    type: StatementType.Foreach,
+    variable: identifier,
+    source: source,
+    body: block.body,
+    position: [foreachToken.position[0], block.position[1], foreachToken.position[2]],
+  };
+}
+
+function classDeclarationStatement(): ClassStatement {
+  const classToken = previous();
+  const name = eatOrFail([TokenType.IDENTIFIER], "Nom de la classe attendu");
+  let parent: TokenIdentifier | null = null;
+  if (eat(TokenType.IDENTIFIER) && previous().value.toLowerCase() === "extends") {
+    parent = eatOrFail([TokenType.IDENTIFIER], "Nom de la classe parente attendu après EXTENDS");
+  }
+  const methods: FunctionStatement[] = [];
+  while (!checkType(TokenType.END) && !isEnd()) {
+    if (eat(TokenType.FUNCTION)) {
+      methods.push(funcDeclarationStatement());
+    } else {
+      throw new UnexpectedTokenError(peek(), "Seules les fonctions sont autorisées dans une classe");
+    }
+  }
+  eatOrFail([TokenType.END], "'FIN' attendu à la fin de la classe");
+  return {
+    type: StatementType.Class,
+    name: name,
+    parent: parent,
+    methods: methods,
+    position: [classToken.position[0], previous().position[1], classToken.position[2]],
+  };
+}
+
 /**
  * Expression
  */
@@ -230,10 +278,19 @@ function assignmentExpression(): Expression {
   if (eat(TokenType.EQUAL)) {
     const token = previous();
     const right = assignmentExpression();
+    if (expr.type === "FieldAccess") {
+      return {
+        type: "FieldAssignment",
+        object: expr.object,
+        field: expr.field,
+        value: right,
+        position: [expr.position[0], right.position[1], expr.position[2]],
+      };
+    }
     if (expr.type !== ExpressionType.Variable) {
       throw new UnexpectedTokenError(
         token,
-        "L'expression à gauche d'un = doit être une variable",
+        "L'expression à gauche d'un = doit être une variable ou un champ d'instance",
       );
     }
     expr = {
@@ -280,16 +337,28 @@ function andExpression(): Expression {
 
 function equalityExpression(): Expression {
   let expr = comparisonExpression();
-  while (eat(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
-    const operator = previous();
-    const right = comparisonExpression();
-    expr = {
-      type: ExpressionType.Binary,
-      operator,
-      left: expr,
-      right: right,
-      position: [expr.position[0], right.position[1], expr.position[2]],
-    };
+  while (true) {
+    if (eat(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
+      const operator = previous();
+      const right = comparisonExpression();
+      expr = {
+        type: ExpressionType.Binary,
+        operator,
+        left: expr,
+        right: right,
+        position: [expr.position[0], right.position[1], expr.position[2]],
+      };
+    } else if (eat(TokenType.IDENTIFIER) && previous().value.toLowerCase() === "instanceof") {
+      const className = eatOrFail([TokenType.IDENTIFIER], "Nom de classe attendu après instanceof");
+      expr = {
+        type: "InstanceOf",
+        object: expr,
+        className: className.value,
+        position: [expr.position[0], className.position[1], expr.position[2]],
+      };
+    } else {
+      break;
+    }
   }
   return expr;
 }
@@ -365,32 +434,44 @@ function unaryExpression(): Expression {
 
 function callExpression(): Expression {
   let expr = arrayAccessExpression();
-  while (eat(TokenType.LEFT_PAREN)) {
-    // On a une parenthèse (donc c'est un appel à une fonction)
-    const open = previous();
-    const callee = expr;
-    // On construit  la liste des paramètres
-    const args: Expression[] = [];
-    if (!checkType(TokenType.RIGHT_PAREN)) {
-      while (true) {
-        args.push(expression());
-        if (!eat(TokenType.COMMA)) {
-          break;
+  while (true) {
+    if (eat(TokenType.LEFT_PAREN)) {
+      // On a une parenthèse (donc c'est un appel à une fonction)
+      const open = previous();
+      const callee = expr;
+      // On construit  la liste des paramètres
+      const args: Expression[] = [];
+      if (!checkType(TokenType.RIGHT_PAREN)) {
+        while (true) {
+          args.push(expression());
+          if (!eat(TokenType.COMMA)) {
+            break;
+          }
         }
       }
+      // On a cloture l'appel
+      const close = eatOrFail(
+        [TokenType.RIGHT_PAREN],
+        "')' attendu à la fin de la liste de paramètre",
+      );
+      expr = {
+        type: ExpressionType.Call,
+        callee: callee,
+        args: args,
+        position: callee.position,
+        argsPosition: [open.position[0], close.position[1], callee.position[2]],
+      };
+    } else if (eat(TokenType.DOT)) {
+      const field = eatOrFail([TokenType.IDENTIFIER], "Nom de champ attendu après '.'");
+      expr = {
+        type: "FieldAccess",
+        object: expr,
+        field: field.value,
+        position: [expr.position[0], field.position[1], expr.position[2]],
+      };
+    } else {
+      break;
     }
-    // On a cloture l'appel
-    const close = eatOrFail(
-      [TokenType.RIGHT_PAREN],
-      "')' attendu à la fin de la liste de paramètre",
-    );
-    expr = {
-      type: ExpressionType.Call,
-      callee: callee,
-      args: args,
-      position: callee.position,
-      argsPosition: [open.position[0], close.position[1], callee.position[2]],
-    };
   }
   return expr;
 }
