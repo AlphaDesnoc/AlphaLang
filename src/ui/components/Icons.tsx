@@ -2,32 +2,50 @@ import { PropsWithChildren } from "react";
 
 type Props = {
   size?: number;
+  hovered?: boolean;
+  hoverText?: string;
 };
 
 /**
  * Icon pack : https://lucide.dev/
  */
 
-export function BookIcon({ size = 24 }: Props) {
+export function BookIcon({ size = 24, hovered = false, hoverText = "Documentation" }: Props) {
   return (
-    <SVG size={size}>
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-      <path d="M6 8h2" />
-      <path d="M6 12h2" />
-      <path d="M16 8h2" />
-      <path d="M16 12h2" />
-    </SVG>
+    <div className="flex items-center gap-2 font-bold">
+      <img 
+        src="/img/book_icon.png"
+        width={size}
+        height={size}
+      />
+      {hovered && <h1>{hoverText}</h1>}
+    </div>
   );
 }
 
-export function ChallengeIcon({ size = 24 }: Props) {
+export function ChallengeIcon({ size = 24, hovered = false, hoverText = "LiveCoding" }: Props) {
   return (
-    <SVG size={size}>
-      <path d="m18 5-3-3H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2" />
-      <path d="M8 18h1" />
-      <path d="M18.4 9.6a2 2 0 1 1 3 3L17 17l-4 1 1-4Z" />
-    </SVG>
+    <div className="flex items-center gap-2 font-bold">
+      <img 
+        src="/img/challenge_icon.png"
+        width={size}
+        height={size}
+      />
+      {hovered && <h1>{hoverText}</h1>}
+    </div>
+  );
+}
+
+export function LangIcon({ size = 24, hovered = false, hoverText = "AlphaLang" }: Props) {
+  return (
+    <div className="flex items-center gap-2 font-bold">
+      <img 
+        src="/img/alphalang_logo_white_without_background.png"
+        width={size}
+        height={size}
+      />
+      {hovered && <h1>{hoverText}</h1>}
+    </div>
   );
 }
 
