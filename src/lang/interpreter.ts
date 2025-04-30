@@ -596,13 +596,13 @@ function ensureNumber(
   ensureType(values, "number", message, expression);
 }
 
-function ensureStrings(
+/*function ensureStrings(
   values: unknown[],
   message: string,
   expression: Expression,
 ): asserts values is string[] {
   ensureType(values, "string", message, expression);
-}
+}*/
 
 function ensureBoolean(
   value: unknown,

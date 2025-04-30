@@ -1,4 +1,4 @@
-import { PlayIcon, SubmitIcon } from "./Icons.tsx";
+import { PlayIcon } from "./Icons.tsx";
 import { runCode } from "../signals/editor.ts";
 
 export function Actions() {

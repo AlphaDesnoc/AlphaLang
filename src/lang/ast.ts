@@ -244,6 +244,8 @@ function classDeclarationStatement(): ClassStatement {
   const classToken = previous();
   const name = eatOrFail([TokenType.IDENTIFIER], "Nom de la classe attendu");
   let parent: TokenIdentifier | null = null;
+
+  //@ts-ignore
   if (eat(TokenType.IDENTIFIER) && previous().value.toLowerCase() === "extends") {
     parent = eatOrFail([TokenType.IDENTIFIER], "Nom de la classe parente attendu après EXTENDS");
   }
@@ -348,6 +350,8 @@ function equalityExpression(): Expression {
         right: right,
         position: [expr.position[0], right.position[1], expr.position[2]],
       };
+
+      //@ts-ignore
     } else if (eat(TokenType.IDENTIFIER) && previous().value.toLowerCase() === "instanceof") {
       const className = eatOrFail([TokenType.IDENTIFIER], "Nom de classe attendu après instanceof");
       expr = {
@@ -464,7 +468,7 @@ function callExpression(): Expression {
     } else if (eat(TokenType.DOT)) {
       const field = eatOrFail([TokenType.IDENTIFIER], "Nom de champ attendu après '.'");
       expr = {
-        type: "FieldAccess",
+        type: ExpressionType.FieldAccess,
         object: expr,
         field: field.value,
         position: [expr.position[0], field.position[1], expr.position[2]],
