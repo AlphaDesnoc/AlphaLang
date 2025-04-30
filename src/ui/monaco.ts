@@ -83,7 +83,7 @@ FIN`,
         [
           "POUR",
           `POUR I ENTRE $1 ET $2
-   $3
+  $3
 FIN`,
         ],
       ].map(([label, insertText]) => ({

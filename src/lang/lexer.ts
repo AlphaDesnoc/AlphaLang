@@ -7,6 +7,7 @@ export const Keywords = new Map([
   ["or", TokenType.OR],
   ["ou", TokenType.OR],
   ["class", TokenType.CLASS],
+  ["classe", TokenType.CLASS],
   ["else", TokenType.ELSE],
   ["sinon", TokenType.ELSE],
   ["alors", TokenType.THEN],
@@ -32,7 +33,13 @@ export const Keywords = new Map([
   ["function", TokenType.FUNCTION],
   [",", TokenType.COMMA],
   ["retourner", TokenType.RETURN],
+  ["return", TokenType.RETURN],
   ["afficher", TokenType.PRINT],
+  ["print", TokenType.PRINT],
+  ["foreach", TokenType.FOREACH],
+  ["pourchaque", TokenType.FOREACH],
+  ["in", TokenType.IN],
+  ["dans", TokenType.IN],
 ]);
 
 let source: string = "";

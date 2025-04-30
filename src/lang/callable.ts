@@ -6,3 +6,8 @@ export class Callable {
     public call: (...args: Value[]) => Value | void,
   ) {}
 }
+
+export type Instance = {
+  className: string;
+  fields: Record<string, Value>;
+};

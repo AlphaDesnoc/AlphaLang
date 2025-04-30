@@ -1,7 +1,8 @@
 {
   "name": "alphalang",
+  "homepage": "https://alphadesnoc.github.io/AlphaLang/",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,9 +10,12 @@
     "build": "tsc && vite build",
     "build:types": "./src/tools/build-types.ts && prettier src/type.schema.ts --write",
     "test": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.11",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
@@ -23,10 +27,14 @@
   },
   "dependencies": {
     "@maverick-js/signals": "^5.11.5",
+    "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-router": "^1.31.25",
     "clsx": "^2.1.1",
+    "gh-pages": "^6.3.0",
     "monaco-editor": "^0.48.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "tailwind": "^4.0.0",
+    "tailwindcss": "^4.1.4"
   }
 }
