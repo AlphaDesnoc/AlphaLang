@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/*:root {
+/* CSS par défaut désactivé - Utilisation exclusive de Tailwind CSS */
+
+/*
+:root {
     --gap: .5rem;
     --background: #1A1B26;
     --border: #32354f;
@@ -8,6 +11,19 @@
     --title: #C0CAF5;
     --sidebarWidth: 50px;
     --accent: #ffbf00;
+}
+
+html {
+    background-color: #0f0f17;
+    color: #e2e8f0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #0f0f17;
+    color: #e2e8f0;
+    font-family: sans-serif;
 }
 
 @layer reset {
@@ -91,14 +107,6 @@
     pre {
         margin: 0;
     }
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    background-color: #14141a;
-    color: var(--text);
-    font-family: sans-serif;
 }
 
 a {
@@ -283,5 +291,4 @@ a {
   width: 10%;
   transition: width 0.3s cubic-bezier(.4,0,.2,1);
 }
-
 */

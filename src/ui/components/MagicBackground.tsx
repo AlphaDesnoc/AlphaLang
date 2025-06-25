@@ -2,14 +2,14 @@ import { PropsWithChildren } from "react";
 
 export function MagicBackground({ children }: PropsWithChildren) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
-      {/* Fond animé magique */}
-      <div className="absolute inset-0 -z-10 animate-gradient bg-gradient-to-br from-blue-400 via-fuchsia-300 to-purple-600 opacity-80 blur-2xl" />
-      {/* Particules lumineuses */}
+    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-slate-900">
+      {/* Fond animé magique - version sombre */}
+      <div className="absolute inset-0 -z-10 animate-gradient bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 opacity-90" />
+      {/* Particules lumineuses sombres */}
       <div className="absolute inset-0 pointer-events-none -z-10">
-        <div className="animate-float absolute top-1/4 left-1/3 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
-        <div className="animate-float2 absolute bottom-1/4 right-1/4 w-24 h-24 bg-fuchsia-300/30 rounded-full blur-2xl" />
-        <div className="animate-float3 absolute top-2/3 right-1/2 w-16 h-16 bg-blue-300/30 rounded-full blur-2xl" />
+        <div className="animate-float absolute top-1/4 left-1/3 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
+        <div className="animate-float2 absolute bottom-1/4 right-1/4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl" />
+        <div className="animate-float3 absolute top-2/3 right-1/2 w-16 h-16 bg-indigo-500/10 rounded-full blur-2xl" />
       </div>
       {children}
       <style>{`

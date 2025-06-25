@@ -8,12 +8,24 @@ type Props = {
   className?: string;
 };
 
-export function Editor({ defaultValue, className }: Props) {
+export function Editor({ defaultValue = "", className }: Props) {
   const divRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    initializeEditor(divRef.current!, defaultValue);
-  }, []);
+    if (divRef.current) {
+      // Petit délai pour s'assurer que le DOM est prêt
+      const timer = setTimeout(() => {
+        initializeEditor(divRef.current!, defaultValue);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [defaultValue]);
 
-  return <Card className={clsx(className)} divRef={divRef} />;
+  return (
+    <Card 
+      className={clsx("h-full border-0 rounded-none bg-slate-900", className)} 
+      divRef={divRef} 
+    />
+  );
 }

@@ -1,24 +1,17 @@
-import { Card } from "./Card.tsx";
-import { OutputIcon } from "./Icons.tsx";
 import { useError, useOutput } from "../signals/editor.ts";
 
 export function Output() {
-  const output = useOutput();
   const error = useError();
-  console.log("reRender");
+  const output = useOutput();
+  const displayText = (error ?? output) || "// Prêt à exécuter votre code AlphaLang...\n// Cliquez sur 'Exécuter' pour voir les résultats ici.";
+  
   return (
-    <Card
-      padded
-      title={
-        <div className="flex items-center gap-2 bg-gray-100 p-3 mb-2">
-          <OutputIcon size={20} /> Sortie
-        </div>
-      }
-      className="h-full w-full overflow-auto"
-    >
-      <pre>
-        <code className="text-xs font-mono p-0 m-0">{error ?? output}</code>
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-slate-900 p-4">
+      <pre className="w-full min-h-0">
+        <code className="text-sm font-mono text-green-400 leading-relaxed whitespace-pre-wrap break-words block">
+          {displayText}
+        </code>
       </pre>
-    </Card>
+    </div>
   );
 }

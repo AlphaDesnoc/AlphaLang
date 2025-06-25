@@ -6,19 +6,33 @@ import {
 } from "@tanstack/react-router";
 import { ChallengePage } from "./pages/ChallengePage.tsx";
 import { LiveCodePage } from "./pages/LiveCode.tsx";
+import { DocumentationPage } from "./pages/DocumentationPage.tsx";
+import { AccountPage } from "./pages/AccountPage.tsx";
+import { ExercisesPage } from "./pages/ExercisesPage.tsx";
+import { ExerciseWorkspace } from "./pages/ExerciseWorkspace.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
 import { ChallengeDefinition } from "../type.challenge.ts";
+import { useAuth } from "./contexts/AuthContext";
+import { AuthLoader } from "./components/AuthLoader";
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <div className="flex h-screen w-full">
+  component: () => {
+    const { loading } = useAuth();
+    
+    if (loading) {
+      return <AuthLoader />;
+    }
+    
+    return (
+      <div className="flex h-screen bg-slate-900">
         <Sidebar />
-        <Outlet />
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
       </div>
-    </>
-  ),
+    );
+  },
 });
 
 const indexRoute = createRoute({
@@ -47,10 +61,34 @@ export const livecodeRoute = createRoute({
 export const documentationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/documentation",
-  component: LiveCodePage,
+  component: DocumentationPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute]);
+export const accountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/account",
+  component: AccountPage,
+});
+
+export const exercisesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/exercises",
+  component: ExercisesPage,
+});
+
+export const exerciseWorkspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/exercise-workspace",
+  component: ExerciseWorkspace,
+});
+
+export const exerciseWorkspaceWithIdRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/exercise-workspace/$exerciseId",
+  component: ExerciseWorkspace,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute, accountRoute, exercisesRoute, exerciseWorkspaceRoute, exerciseWorkspaceWithIdRoute]);
 
 export const router = createRouter({ routeTree });
 

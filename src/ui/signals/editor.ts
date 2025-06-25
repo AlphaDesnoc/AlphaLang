@@ -21,23 +21,39 @@ const stdOut = {
 };
 
 export function initializeEditor(el: HTMLElement, initialValue: string = "") {
+  // Nettoyage de l'ancien éditeur s'il existe
+  if (editor) {
+    editor.dispose();
+  }
+  
   editor = MonacoEditor.create(el, {
     value: initialValue,
     language: langId,
+    theme: 'vs-dark',
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
     fontSize: 16,
     automaticLayout: true,
     padding: { top: 14 },
+    readOnly: false, // S'assurer que l'éditeur est éditable
     scrollbar: {
-      verticalScrollbarSize: 5,
-      verticalSliderSize: 3,
-      horizontalScrollbarSize: 5,
-      horizontalSliderSize: 3,
+      verticalScrollbarSize: 8,
+      verticalSliderSize: 5,
+      horizontalScrollbarSize: 8,
+      horizontalSliderSize: 5,
     },
-    // https://github.com/microsoft/monaco-editor/issues/2273
+    // Configuration pour permettre l'édition
     quickSuggestions: { other: true, strings: true },
+    wordWrap: 'on',
+    lineNumbers: 'on',
+    glyphMargin: true,
+    folding: true,
+    lineDecorationsWidth: 10,
+    lineNumbersMinChars: 3,
   });
+  
+  // S'assurer que l'éditeur a le focus pour l'édition
+  editor.focus();
 }
 
 export function runCode() {
@@ -71,4 +87,9 @@ export function useOutput() {
 
 export function useError() {
   return useSignalValue($error);
+}
+
+export function clearOutput() {
+  stdOut.clear();
+  $error.set(null);
 }

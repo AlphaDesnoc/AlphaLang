@@ -3,7 +3,7 @@ import { Keywords } from "../lang/lexer.ts";
 import { colors } from "./colors.ts";
 import ITextModel = editor.ITextModel;
 
-export const langId = "grafilang";
+export const langId = "alphalang";
 languages.register({ id: langId });
 const keywords = [
   ...Array.from(Keywords.keys()),
