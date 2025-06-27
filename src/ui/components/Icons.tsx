@@ -4,10 +4,11 @@ type Props = {
   size?: number;
   hovered?: boolean;
   hoverText?: string;
+  stroke?: string;
 };
 
 /**
- * Icon pack : https://lucide.dev/
+ * Pack d'icones : https://lucide.dev/
  */
 
 export function BookIcon({ size = 24, hovered = false, hoverText = "Documentation" }: Props) {
@@ -163,17 +164,17 @@ export function UserIcon({ size = 24 }: Props) {
 
 export function LogInIcon({ size = 24 }: Props) {
   return (
-    <SVG size={size}>
+    <SVG size={size} stroke="white">
+      <path d="m10 17 5-5-5-5"/>
+      <path d="M15 12H3"/>
       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-      <polyline points="10 17 15 12 10 7"/>
-      <line x1="15" x2="3" y1="12" y2="12"/>
     </SVG>
   );
 }
 
 export function LogOutIcon({ size = 24 }: Props) {
   return (
-    <SVG size={size}>
+    <SVG size={size} stroke="white">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
       <polyline points="16 17 21 12 16 7"/>
       <line x1="21" x2="9" y1="12" y2="12"/>
@@ -212,7 +213,7 @@ export function AlertTriangleIcon({ size = 24 }: Props) {
   );
 }
 
-function SVG({ size = 24, children }: PropsWithChildren<Props>) {
+function SVG({ size = 24, children, stroke }: PropsWithChildren<Props>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -220,7 +221,7 @@ function SVG({ size = 24, children }: PropsWithChildren<Props>) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke={stroke || "currentColor"}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
 import { ExerciseService } from '../../services/ExerciseService';
 import { Exercise, ExerciseResult } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
-// import { monaco } from '../../monaco-config';
+import { editor as MonacoEditor } from "monaco-editor/esm/vs/editor/editor.api";
 
 export const ExerciseWorkspace: React.FC = () => {
-  const params = useParams({ from: '/exercise-workspace/$exerciseId' });
-  const navigate = useNavigate();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [result, setResult] = useState<ExerciseResult | null>(null);
@@ -16,23 +13,14 @@ export const ExerciseWorkspace: React.FC = () => {
   const [showSolution, setShowSolution] = useState(false);
   const [loading, setLoading] = useState(true);
   const editorRef = useRef<HTMLDivElement>(null);
-  const monacoEditorRef = useRef<any | null>(null);
+  const monacoEditorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     const loadExercises = async () => {
       try {
         const allExercises = await ExerciseService.getAllExercises();
         setExercises(allExercises);
-        
-        // Si on a un exerciseId dans l'URL, le sélectionner
-        if (params?.exerciseId) {
-          const targetExercise = allExercises.find(ex => ex.id === params.exerciseId);
-          if (targetExercise) {
-            setSelectedExercise(targetExercise);
-          } else if (allExercises.length > 0) {
-            setSelectedExercise(allExercises[0]);
-          }
-        } else if (allExercises.length > 0) {
+        if (allExercises.length > 0) {
           setSelectedExercise(allExercises[0]);
         }
       } catch (error) {
@@ -43,7 +31,7 @@ export const ExerciseWorkspace: React.FC = () => {
     };
 
     loadExercises();
-  }, [params?.exerciseId]);
+  }, []);
 
   useEffect(() => {
     if (editorRef.current && selectedExercise) {
@@ -52,37 +40,25 @@ export const ExerciseWorkspace: React.FC = () => {
         monacoEditorRef.current.dispose();
       }
 
-      // Créer un textarea simple temporairement pour tester
-      const textarea = document.createElement('textarea');
-      textarea.value = selectedExercise.starterCode;
-      textarea.style.width = '100%';
-      textarea.style.height = '100%';
-      textarea.style.backgroundColor = '#1e293b';
-      textarea.style.color = '#ffffff';
-      textarea.style.border = 'none';
-      textarea.style.outline = 'none';
-      textarea.style.fontFamily = 'Monaco, "Cascadia Code", "Segoe UI Mono", Consolas, "Courier New", monospace';
-      textarea.style.fontSize = '14px';
-      textarea.style.padding = '10px';
-      textarea.style.resize = 'none';
-      
-      // Vider le container et ajouter le textarea
-      editorRef.current.innerHTML = '';
-      editorRef.current.appendChild(textarea);
-      
-      // Mock de l'éditeur Monaco pour les tests
-      monacoEditorRef.current = {
-        getValue: () => textarea.value,
-        setValue: (value: string) => { textarea.value = value; },
-        dispose: () => { textarea.remove(); }
-      } as any;
+      // Créer un nouvel éditeur
+      const editor = MonacoEditor.create(editorRef.current, {
+        value: selectedExercise.starterCode,
+        language: 'javascript',
+        theme: 'vs-dark',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontSize: 14,
+        automaticLayout: true,
+        padding: { top: 10 },
+      });
 
+      monacoEditorRef.current = editor;
       setShowHints(new Array(selectedExercise.hints.length).fill(false));
       setResult(null);
       setShowSolution(false);
 
       return () => {
-        textarea.remove();
+        editor.dispose();
       };
     }
   }, [selectedExercise]);
@@ -93,14 +69,10 @@ export const ExerciseWorkspace: React.FC = () => {
     setIsRunning(true);
     try {
       const currentCode = monacoEditorRef.current.getValue();
-      console.log('🚀 Exécution des tests pour:', selectedExercise.title);
-      console.log('📝 Code:', currentCode);
-      
       const testResult = await ExerciseService.runExerciseTests(selectedExercise, currentCode);
-      console.log('✅ Résultat des tests:', testResult);
       setResult(testResult);
     } catch (error) {
-      console.error('❌ Erreur lors de l\'exécution des tests:', error);
+      console.error('Erreur lors de l\'exécution des tests:', error);
       setResult({
         passed: false,
         score: 0,
@@ -187,8 +159,8 @@ export const ExerciseWorkspace: React.FC = () => {
               <select
                 value={selectedExercise.id}
                 onChange={(e) => {
-                  const exerciseId = e.target.value;
-                  navigate({ to: `/exercise-workspace/${exerciseId}` });
+                  const exercise = exercises.find(ex => ex.id === e.target.value);
+                  if (exercise) setSelectedExercise(exercise);
                 }}
                 className="px-3 py-2 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -199,19 +171,13 @@ export const ExerciseWorkspace: React.FC = () => {
                 ))}
               </select>
               <button
-                type="button"
                 onClick={handleReset}
                 className="px-3 py-2 text-sm text-slate-300 hover:text-white border border-slate-600 rounded-lg hover:border-slate-500 transition-colors"
               >
                 Reset
               </button>
               <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRunTests();
-                }}
+                onClick={handleRunTests}
                 disabled={isRunning}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >

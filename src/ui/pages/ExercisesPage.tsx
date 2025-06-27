@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 import { ExerciseService } from '../../services/ExerciseService';
 import { Exercise } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
@@ -84,7 +83,6 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect }) => {
 };
 
 export const ExercisesPage: React.FC = () => {
-  const navigate = useNavigate();
   const [selectedDifficulty, setSelectedDifficulty] = useState<ExerciseDifficulty | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,8 +117,8 @@ export const ExercisesPage: React.FC = () => {
   }, [exercises, selectedDifficulty, selectedCategory, searchTerm]);
 
   const handleExerciseSelect = (exercise: Exercise) => {
-    // Navigation vers le workspace d'exercices avec l'ID de l'exercice
-    navigate({ to: `/exercise-workspace/${exercise.id}` });
+    // Navigation vers le workspace d'exercices
+    window.location.href = `/exercise-workspace`;
   };
 
   const difficultyOptions: { value: ExerciseDifficulty | 'all'; label: string }[] = [
@@ -177,13 +175,7 @@ export const ExercisesPage: React.FC = () => {
           {/* Quick start button */}
           <div className="mb-6">
             <button
-              onClick={() => {
-                if (filteredExercises.length > 0) {
-                  navigate({ to: `/exercise-workspace/${filteredExercises[0].id}` });
-                } else {
-                  navigate({ to: '/exercise-workspace' });
-                }
-              }}
+              onClick={() => window.location.href = '/exercise-workspace'}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               🚀 Commencer les exercices

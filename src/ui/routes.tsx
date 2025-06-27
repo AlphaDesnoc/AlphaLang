@@ -82,13 +82,7 @@ export const exerciseWorkspaceRoute = createRoute({
   component: ExerciseWorkspace,
 });
 
-export const exerciseWorkspaceWithIdRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/exercise-workspace/$exerciseId",
-  component: ExerciseWorkspace,
-});
-
-const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute, accountRoute, exercisesRoute, exerciseWorkspaceRoute, exerciseWorkspaceWithIdRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute, accountRoute, exercisesRoute, exerciseWorkspaceRoute]);
 
 export const router = createRouter({ routeTree });
 

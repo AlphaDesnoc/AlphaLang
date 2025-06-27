@@ -6,18 +6,4 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '',
   plugins: [react(), tailwindcss()],
-  server: {
-    hmr: {
-      overlay: false
-    }
-  },
-  optimizeDeps: {
-    include: [
-      'monaco-editor/esm/vs/language/typescript/ts.worker',
-      'monaco-editor/esm/vs/editor/editor.worker'
-    ]
-  },
-  define: {
-    'process.env': {}
-  }
 })

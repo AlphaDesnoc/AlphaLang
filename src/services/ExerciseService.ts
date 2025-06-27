@@ -1,4 +1,3 @@
-// Force Vite HMR update
 import { Exercise, ExerciseProgress, ExerciseResult } from '../types/exercise';
 import { ApiService } from './ApiService';
 

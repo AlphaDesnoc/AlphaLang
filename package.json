@@ -12,13 +12,15 @@
     "test": "vitest",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "dev-full": "concurrently -n FRONT,BACK -c blue,green \"bun run dev\" \"cd backend && bun run start\""
   },
   "devDependencies": {
     "@types/bun": "^1.2.11",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^9.2.0",
     "json-schema-to-typescript": "^14.0.4",
     "prettier": "^3.2.5",
     "typescript": "^5.2.2",
