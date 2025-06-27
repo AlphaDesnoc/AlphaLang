@@ -13,7 +13,10 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "dev-full": "concurrently -n FRONT,BACK -c blue,green \"bun run dev\" \"cd backend && bun run start\""
+    "dev-full": "concurrently -n FRONT,BACK -c blue,green \"bun run dev\" \"cd backend && bun run start\"",
+    "build:frontend": "tsc && vite build",
+    "build:backend": "cd backend && bun install",
+    "start": "cd backend && bun run start"
   },
   "devDependencies": {
     "@types/bun": "^1.2.11",

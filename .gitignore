@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Additional ignores to reduce file watching
+backend/node_modules
+backend/dist
+backend/*.log
+.vite
+.cache
+coverage
+.nyc_output
+*.tsbuildinfo
+temp
+tmp

@@ -4,6 +4,8 @@ import { ExerciseService } from '../../services/ExerciseService';
 import { Exercise, ExerciseResult } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
 import { initializeEditor } from '../signals/editor';
+import { useStats } from '../contexts/StatsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { editor as MonacoEditor } from "monaco-editor/esm/vs/editor/editor.api";
 import { Card } from '../components/Card';
 
@@ -13,6 +15,8 @@ interface ExerciseDetailPageProps {
 
 export const ExerciseDetailPage: React.FC<ExerciseDetailPageProps> = ({ exerciseId }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { markExerciseCompleted } = useStats();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [code, setCode] = useState('');
   const [result, setResult] = useState<ExerciseResult | null>(null);
@@ -23,12 +27,20 @@ export const ExerciseDetailPage: React.FC<ExerciseDetailPageProps> = ({ exercise
   const monacoEditorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
-    const foundExercise = ExerciseService.getExerciseById(exerciseId);
-    if (foundExercise) {
-      setExercise(foundExercise);
-      setCode(foundExercise.starterCode);
-      setShowHints(new Array(foundExercise.hints.length).fill(false));
-    }
+    const loadExercise = async () => {
+      try {
+        const foundExercise = await ExerciseService.getExerciseById(exerciseId);
+        if (foundExercise) {
+          setExercise(foundExercise);
+          setCode(foundExercise.starterCode);
+          setShowHints(new Array(foundExercise.hints.length).fill(false));
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'exercice:', error);
+      }
+    };
+    
+    loadExercise();
   }, [exerciseId]);
 
   useEffect(() => {
@@ -67,6 +79,14 @@ export const ExerciseDetailPage: React.FC<ExerciseDetailPageProps> = ({ exercise
       const currentCode = monacoEditorRef.current?.getValue() || code;
       const testResult = await ExerciseService.runExerciseTests(exercise, currentCode);
       setResult(testResult);
+      
+      // Marquer l'exercice comme terminé si réussi et utilisateur connecté
+      if (testResult.passed && user) {
+        await markExerciseCompleted(exercise.id, {
+          ...testResult,
+          points: exercise.points || 10
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de l\'exécution des tests:', error);
       setResult({

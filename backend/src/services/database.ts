@@ -486,4 +486,112 @@ export class DatabaseService {
   close() {
     this.db.close();
   }
+
+  // Statistiques utilisateur
+  getUserStats(userId: string) {
+    // Récupérer les statistiques de base
+    const progressQuery = this.db.prepare(`
+      SELECT 
+        COUNT(*) as totalAttempts,
+        COUNT(CASE WHEN completed = 1 THEN 1 END) as solvedChallenges,
+        AVG(CASE WHEN completed = 1 THEN bestScore END) as averageScore,
+        GROUP_CONCAT(CASE WHEN completed = 1 THEN exerciseId END) as completedExerciseIds
+      FROM exercise_progress 
+      WHERE userId = ?
+    `);
+    
+    const progressData = progressQuery.get(userId) as {
+      totalAttempts: number;
+      solvedChallenges: number;
+      averageScore: number | null;
+      completedExerciseIds: string | null;
+    };
+
+    // Calculer les points totaux
+    const pointsQuery = this.db.prepare(`
+      SELECT SUM(e.points) as totalPoints
+      FROM exercise_progress ep
+      JOIN exercises e ON ep.exerciseId = e.id
+      WHERE ep.userId = ? AND ep.completed = 1
+    `);
+    
+    const pointsData = pointsQuery.get(userId) as { totalPoints: number | null };
+
+    const totalPoints = pointsData.totalPoints || 0;
+    const completedExercises = progressData.completedExerciseIds 
+      ? progressData.completedExerciseIds.split(',').filter(id => id)
+      : [];
+
+    // Déterminer le niveau basé sur les points
+    let level = 'Débutant';
+    if (totalPoints >= 1000) {
+      level = 'Expert';
+    } else if (totalPoints >= 500) {
+      level = 'Avancé';
+    } else if (totalPoints >= 100) {
+      level = 'Intermédiaire';
+    }
+
+    return {
+      solvedChallenges: progressData.solvedChallenges || 0,
+      totalPoints,
+      level,
+      completedExercises,
+      totalAttempts: progressData.totalAttempts || 0,
+      averageScore: progressData.averageScore || 0
+    };
+  }
+
+  updateUserStats(userId: string, exerciseId: string, passed: boolean, score: number, points: number) {
+    const now = new Date().toISOString();
+    
+    // Récupérer ou créer la progression de l'exercice
+    const existingProgress = this.getExerciseProgress(exerciseId, userId);
+    
+    if (existingProgress) {
+      // Mettre à jour la progression existante
+      const updateQuery = this.db.prepare(`
+        UPDATE exercise_progress 
+        SET 
+          completed = ?,
+          attempts = attempts + 1,
+          lastAttempt = ?,
+          bestScore = MAX(bestScore, ?),
+          updatedAt = ?
+        WHERE exerciseId = ? AND userId = ?
+      `);
+      
+      updateQuery.run(
+        passed ? 1 : 0,
+        now,
+        score,
+        now,
+        exerciseId,
+        userId
+      );
+    } else {
+      // Créer une nouvelle progression
+      const insertQuery = this.db.prepare(`
+        INSERT INTO exercise_progress (
+          id, exerciseId, userId, completed, attempts, lastAttempt, bestScore, 
+          timeSpent, hintsUsed, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const id = `progress_${exerciseId}_${userId}_${Date.now()}`;
+      insertQuery.run(
+        id,
+        exerciseId,
+        userId,
+        passed ? 1 : 0,
+        1,
+        now,
+        score,
+        0,
+        0,
+        now,
+        now
+      );
+    }
+  }
 }

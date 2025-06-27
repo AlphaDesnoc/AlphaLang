@@ -56,4 +56,42 @@ statsRouter.get('/difficulties', (c) => {
   }
 });
 
+// GET /stats/:userId - Récupérer les statistiques d'un utilisateur spécifique
+statsRouter.get('/:userId', (c) => {
+  try {
+    const userId = c.req.param('userId');
+    const userStats = db.getUserStats(userId);
+    
+    return c.json({
+      success: true,
+      data: userStats
+    });
+  } catch (error: any) {
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500);
+  }
+});
+
+// POST /stats/:userId - Mettre à jour les statistiques d'un utilisateur
+statsRouter.post('/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    const { exerciseId, passed, score, points } = await c.req.json();
+    
+    db.updateUserStats(userId, exerciseId, passed, score, points);
+    
+    return c.json({
+      success: true,
+      message: 'Statistiques mises à jour avec succès'
+    });
+  } catch (error: any) {
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500);
+  }
+});
+
 export { statsRouter };

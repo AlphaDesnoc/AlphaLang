@@ -2,9 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ExerciseService } from '../../services/ExerciseService';
 import { Exercise, ExerciseResult } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
+import { useStats } from '../contexts/StatsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { editor as MonacoEditor } from "monaco-editor/esm/vs/editor/editor.api";
 
 export const ExerciseWorkspace: React.FC = () => {
+  const { user } = useAuth();
+  const { markExerciseCompleted } = useStats();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [result, setResult] = useState<ExerciseResult | null>(null);
@@ -71,6 +75,14 @@ export const ExerciseWorkspace: React.FC = () => {
       const currentCode = monacoEditorRef.current.getValue();
       const testResult = await ExerciseService.runExerciseTests(selectedExercise, currentCode);
       setResult(testResult);
+      
+      // Marquer l'exercice comme terminé si réussi et utilisateur connecté
+      if (testResult.passed && user) {
+        await markExerciseCompleted(selectedExercise.id, {
+          ...testResult,
+          points: selectedExercise.points || 10
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de l\'exécution des tests:', error);
       setResult({

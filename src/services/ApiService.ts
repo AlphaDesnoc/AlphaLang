@@ -120,4 +120,49 @@ export class ApiService {
     }
     return response.json();
   }
+
+  // Statistiques utilisateur individuelles
+  static async getUserStats(userId: string): Promise<{
+    solvedChallenges: number;
+    totalPoints: number;
+    level: string;
+    completedExercises: string[];
+    totalAttempts: number;
+    averageScore: number;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/stats/${userId}`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des statistiques utilisateur');
+    }
+    const result = await response.json();
+    return result.data;
+  }
+
+  static async updateUserStats(userId: string, exerciseId: string, result: ExerciseResult): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/stats/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        exerciseId, 
+        passed: result.passed,
+        score: result.score,
+        points: result.passed ? await this.getExercisePoints(exerciseId) : 0
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la mise à jour des statistiques utilisateur');
+    }
+  }
+
+  private static async getExercisePoints(exerciseId: string): Promise<number> {
+    try {
+      const exercise = await this.getExerciseById(exerciseId);
+      return exercise.points || 10; // valeur par défaut
+    } catch {
+      return 10;
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useStats } from '../contexts/StatsContext';
 import { UserIcon, EmailIcon, LockIcon, EyeIcon, EyeOffIcon, TrashIcon } from '../components/Icons';
 import { updateProfile, updatePassword } from 'firebase/auth';
 import { auth } from '../../firebase/config';
@@ -8,6 +9,7 @@ import { useNavigate } from '@tanstack/react-router';
 
 export function AccountPage() {
   const { user, deleteAccount } = useAuth();
+  const { stats, loading: statsLoading, refreshStats } = useStats();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -363,7 +365,21 @@ export function AccountPage() {
 
         {/* Statistiques du compte */}
         <div className="mt-8 bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-700 p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Statistiques du compte</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">Statistiques du compte</h2>
+            <button
+              onClick={refreshStats}
+              disabled={statsLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center space-x-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={statsLoading ? 'animate-spin' : ''}>
+                <path d="M23 4v6h-6"/>
+                <path d="M1 20v-6h6"/>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+              </svg>
+              <span>Actualiser</span>
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -373,7 +389,9 @@ export function AccountPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-white">Défis résolus</h3>
-              <p className="text-2xl font-bold text-green-400">0</p>
+              <p className="text-2xl font-bold text-green-400">
+                {statsLoading ? '...' : (stats?.solvedChallenges || 0)}
+              </p>
               <p className="text-slate-400 text-sm">Programmes réussis</p>
             </div>
             
@@ -384,7 +402,9 @@ export function AccountPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-white">Points</h3>
-              <p className="text-2xl font-bold text-blue-400">0</p>
+              <p className="text-2xl font-bold text-blue-400">
+                {statsLoading ? '...' : (stats?.totalPoints || 0)}
+              </p>
               <p className="text-slate-400 text-sm">Score total</p>
             </div>
             
@@ -395,10 +415,38 @@ export function AccountPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-white">Niveau</h3>
-              <p className="text-2xl font-bold text-purple-400">Débutant</p>
+              <p className="text-2xl font-bold text-purple-400">
+                {statsLoading ? '...' : (stats?.level || 'Débutant')}
+              </p>
               <p className="text-slate-400 text-sm">Rang actuel</p>
             </div>
           </div>
+          
+          {/* Statistiques détaillées */}
+          {stats && !statsLoading && (
+            <div className="mt-6 pt-6 border-t border-slate-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Tentatives totales:</span>
+                  <span className="text-white font-medium">{stats.totalAttempts}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Score moyen:</span>
+                  <span className="text-white font-medium">{stats.averageScore.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Taux de réussite:</span>
+                  <span className="text-white font-medium">
+                    {stats.totalAttempts > 0 ? ((stats.solvedChallenges / stats.totalAttempts) * 100).toFixed(1) : 0}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Exercices complétés:</span>
+                  <span className="text-white font-medium">{stats.completedExercises.length}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Zone de danger - Suppression de compte */}

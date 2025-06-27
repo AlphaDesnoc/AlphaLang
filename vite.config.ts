@@ -6,4 +6,29 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '',
   plugins: [react(), tailwindcss()],
+  server: {
+    watch: {
+      usePolling: false,
+      interval: 1000,
+      ignored: [
+        '**/node_modules/**',
+        '**/backend/**',
+        '**/dist/**',
+        '**/.git/**',
+        '**/test/**',
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/coverage/**',
+        '**/.nyc_output/**',
+        '**/logs/**',
+        '**/*.log'
+      ]
+    },
+    fs: {
+      allow: ['..']
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom']
+  }
 })

@@ -1,3 +1,4 @@
+
 import { Link } from "@tanstack/react-router";
 import { LangIcon, ChallengeIcon, BookIcon, MenuIcon, XIcon, LogInIcon, LogOutIcon, UserIcon } from "./Icons.tsx";
 import { useState, useEffect, useRef } from "react";
