@@ -4,9 +4,18 @@ import { Exercise, ExerciseResult } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
 import { useStats } from '../contexts/StatsContext';
 import { useAuth } from '../contexts/AuthContext';
+import { AuthGuard } from '../components/AuthGuard';
 import { editor as MonacoEditor } from "monaco-editor/esm/vs/editor/editor.api";
 
 export const ExerciseWorkspace: React.FC = () => {
+  return (
+    <AuthGuard>
+      <ExerciseWorkspaceContent />
+    </AuthGuard>
+  );
+};
+
+const ExerciseWorkspaceContent: React.FC = () => {
   const { user } = useAuth();
   const { markExerciseCompleted } = useStats();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);

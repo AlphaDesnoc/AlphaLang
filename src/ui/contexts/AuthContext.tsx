@@ -8,6 +8,7 @@ interface AuthContextType {
   register: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,13 +76,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const refreshedUser = await AuthService.refreshUserProfile();
+      setUser(refreshedUser);
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement du profil:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
     login,
     register,
     logout,
-    deleteAccount
+    deleteAccount,
+    refreshUser
   };
 
   return (

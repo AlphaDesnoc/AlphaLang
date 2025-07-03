@@ -2,15 +2,18 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ExerciseService } from '../../services/ExerciseService';
 import { Exercise } from '../../types/exercise';
 import { MagicBackground } from '../components/MagicBackground';
+import { AuthGuard } from '../components/AuthGuard';
+import { ExerciseActions } from '../components/ExerciseActions';
 
 type ExerciseDifficulty = 'facile' | 'moyen' | 'difficile';
 
 interface ExerciseCardProps {
   exercise: Exercise;
   onSelect: (exercise: Exercise) => void;
+  onDeleted: () => void;
 }
 
-const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect }) => {
+const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect, onDeleted }) => {
   const difficultyColors = {
     facile: 'bg-green-500/20 text-green-300 border-green-500/30',
     moyen: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
@@ -44,9 +47,22 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect }) => {
                 <span className={`px-2 py-1 text-xs font-medium rounded-md border ${difficultyColors[exercise.difficulty]}`}>
                   {exercise.difficulty}
                 </span>
+                {exercise.official && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    Officiel
+                  </span>
+                )}
                 <span className="text-slate-400 text-sm">{exercise.points} pts</span>
               </div>
             </div>
+          </div>
+          
+          {/* Actions d'exercice */}
+          <div onClick={(e) => e.stopPropagation()}>
+            <ExerciseActions 
+              exercise={exercise} 
+              onDeleted={onDeleted}
+            />
           </div>
         </div>
         
@@ -71,8 +87,13 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect }) => {
             )}
           </div>
           
-          <div className="text-slate-400 text-sm">
-            {exercise.testCases.length} test{exercise.testCases.length > 1 ? 's' : ''}
+          <div className="text-slate-400 text-sm flex items-center gap-2">
+            <span>{exercise.testCases.length} test{exercise.testCases.length > 1 ? 's' : ''}</span>
+            {exercise.createdBy && exercise.createdBy !== 'system' && (
+              <span className="text-xs opacity-70">
+                • {exercise.official ? 'Officiel' : 'Communauté'}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -83,8 +104,17 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onSelect }) => {
 };
 
 export const ExercisesPage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <ExercisesContent />
+    </AuthGuard>
+  );
+};
+
+const ExercisesContent: React.FC = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<ExerciseDifficulty | 'all'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
+  const [showOnlyOfficial, setShowOnlyOfficial] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,20 +134,31 @@ export const ExercisesPage: React.FC = () => {
     loadExercises();
   }, []);
 
+  const refreshExercises = async () => {
+    try {
+      const data = await ExerciseService.getAllExercises();
+      setExercises(data);
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement des exercices:', error);
+    }
+  };
+
   const filteredExercises = useMemo(() => {
     return exercises.filter(exercise => {
       const matchesDifficulty = selectedDifficulty === 'all' || exercise.difficulty === selectedDifficulty;
       const matchesCategory = selectedCategory === 'all' || exercise.category === selectedCategory;
+      const matchesOfficial = !showOnlyOfficial || exercise.official === true;
       const matchesSearch = exercise.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            exercise.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            exercise.concepts.some(concept => concept.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      return matchesDifficulty && matchesCategory && matchesSearch;
+      return matchesDifficulty && matchesCategory && matchesOfficial && matchesSearch;
     });
-  }, [exercises, selectedDifficulty, selectedCategory, searchTerm]);
+  }, [exercises, selectedDifficulty, selectedCategory, showOnlyOfficial, searchTerm]);
 
-  const handleExerciseSelect = (exercise: Exercise) => {
+  const handleExerciseSelect = (_exercise: Exercise) => {
     // Navigation vers le workspace d'exercices
+    // TODO: Passer l'exercice sélectionné au workspace
     window.location.href = `/exercise-workspace`;
   };
 
@@ -165,9 +206,17 @@ export const ExercisesPage: React.FC = () => {
           <>
             {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Exercices AlphaLang
-          </h1>
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-4xl font-bold text-white">
+              Exercices AlphaLang
+            </h1>
+            <a
+              href="/exercises/create"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              + Créer un exercice
+            </a>
+          </div>
           <p className="text-slate-300 text-lg mb-6">
             Pratiquez et améliorez vos compétences en programmation avec des exercices interactifs
           </p>
@@ -262,6 +311,22 @@ export const ExercisesPage: React.FC = () => {
                 </button>
               ))}
             </div>
+            
+            {/* Official filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 text-sm font-medium">Statut:</span>
+              <button
+                onClick={() => setShowOnlyOfficial(!showOnlyOfficial)}
+                className={`px-3 py-1 text-sm rounded-md border transition-all flex items-center space-x-1 ${
+                  showOnlyOfficial
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                    : 'bg-slate-800/50 text-slate-300 border-slate-700/50 hover:bg-slate-800/70'
+                }`}
+              >
+                <span>👑</span>
+                <span>{showOnlyOfficial ? 'Officiels uniquement' : 'Tous'}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -280,6 +345,7 @@ export const ExercisesPage: React.FC = () => {
                 key={exercise.id}
                 exercise={exercise}
                 onSelect={handleExerciseSelect}
+                onDeleted={refreshExercises}
               />
             ))}
           </div>

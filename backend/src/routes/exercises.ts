@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { DatabaseService } from '../services/database.js';
 import { ExerciseExecutionService } from '../services/execution.js';
+import { PermissionService } from '../services/permissions.js';
 import { CreateExerciseRequest, SubmitExerciseRequest, UpdateExerciseRequest } from '../types/index.js';
 
 const exercisesRouter = new Hono();
@@ -65,16 +66,20 @@ exercisesRouter.post('/', async (c) => {
     const body = await c.req.json() as CreateExerciseRequest;
     
     // Validation des données
-    if (!body.title || !body.description || !body.difficulty) {
+    if (!body.title || !body.description || !body.difficulty || !body.createdBy) {
       return c.json({
         success: false,
-        error: 'Champs requis manquants: title, description, difficulty'
+        error: 'Champs requis manquants: title, description, difficulty, createdBy'
       }, 400);
     }
     
+    // Déterminer si l'exercice doit être marqué comme officiel
+    const isOfficial = PermissionService.shouldMarkAsOfficial(body.createdBy);
+    
     const exerciseData = {
       id: crypto.randomUUID(),
-      ...body
+      ...body,
+      official: isOfficial
     };
     
     const exercise = db.createExercise(exerciseData);
@@ -87,6 +92,81 @@ exercisesRouter.post('/', async (c) => {
     return c.json({ 
       success: false, 
       error: error.message 
+    }, 500);
+  }
+});
+
+// DELETE /exercises/:id - Supprimer un exercice
+exercisesRouter.delete('/:id', async (c) => {
+  try {
+    const exerciseId = c.req.param('id');
+    const body = await c.req.json() as { userId: string };
+    
+    console.log('🗑️ Tentative suppression exercice:', { exerciseId, userId: body.userId });
+    
+    if (!body.userId) {
+      console.log('❌ UserId manquant');
+      return c.json({
+        success: false,
+        error: 'UserId requis pour la suppression'
+      }, 400);
+    }
+    
+    // Vérifier que l'exercice existe
+    const exercise = db.getExerciseById(exerciseId);
+    if (!exercise) {
+      console.log('❌ Exercice non trouvé:', exerciseId);
+      return c.json({
+        success: false,
+        error: 'Exercice non trouvé'
+      }, 404);
+    }
+    
+    console.log('📋 Exercice trouvé:', { id: exercise.id, createdBy: exercise.createdBy });
+    
+    // Vérifier les permissions : créateur ou admin/owner
+    const userPermissions = PermissionService.getUserPermissions(body.userId);
+    const isCreator = exercise.createdBy === body.userId;
+    const canDelete = isCreator || userPermissions.canCreateOfficialExercises;
+    
+    console.log('🔐 Vérification permissions:', {
+      userId: body.userId,
+      isCreator,
+      userRole: userPermissions.role,
+      canCreateOfficial: userPermissions.canCreateOfficialExercises,
+      canDelete
+    });
+    
+    if (!canDelete) {
+      console.log('❌ Permissions insuffisantes');
+      return c.json({
+        success: false,
+        error: 'Permissions insuffisantes pour supprimer cet exercice'
+      }, 403);
+    }
+    
+    // Supprimer l'exercice
+    console.log('🗑️ Suppression en cours...');
+    const deleted = db.deleteExercise(exerciseId);
+    
+    if (!deleted) {
+      console.log('❌ Échec suppression DB');
+      return c.json({
+        success: false,
+        error: 'Erreur lors de la suppression de l\'exercice'
+      }, 500);
+    }
+    
+    console.log('✅ Exercice supprimé avec succès');
+    return c.json({
+      success: true,
+      message: 'Exercice supprimé avec succès'
+    });
+  } catch (error: any) {
+    console.error('❌ Erreur suppression:', error);
+    return c.json({
+      success: false,
+      error: error.message
     }, 500);
   }
 });

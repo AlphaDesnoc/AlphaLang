@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useStats } from '../contexts/StatsContext';
 import { UserIcon, EmailIcon, LockIcon, EyeIcon, EyeOffIcon, TrashIcon } from '../components/Icons';
@@ -6,9 +6,18 @@ import { updateProfile, updatePassword } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { ConfirmDeleteAccountModal } from '../components/ConfirmDeleteAccountModal';
 import { useNavigate } from '@tanstack/react-router';
+import { AuthGuard } from '../components/AuthGuard';
 
 export function AccountPage() {
-  const { user, deleteAccount } = useAuth();
+  return (
+    <AuthGuard>
+      <AccountContent />
+    </AuthGuard>
+  );
+}
+
+function AccountContent() {
+  const { user, deleteAccount, refreshUser } = useAuth();
   const { stats, loading: statsLoading, refreshStats } = useStats();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -34,6 +43,13 @@ export function AccountPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // Synchroniser le displayName avec l'utilisateur actuel
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '');
+    }
+  }, [user]);
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileLoading(true);
@@ -45,11 +61,15 @@ export function AccountPage() {
         await updateProfile(auth.currentUser, {
           displayName: displayName.trim() || null
         });
-        await auth.currentUser.reload();
+        
+        // Mettre à jour le contexte avec les nouvelles données
+        await refreshUser();
+        
         setProfileSuccess('Profil mis à jour avec succès !');
         setIsEditing(false);
       }
     } catch (error: any) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
       setProfileError('Erreur lors de la mise à jour du profil.');
     } finally {
       setProfileLoading(false);

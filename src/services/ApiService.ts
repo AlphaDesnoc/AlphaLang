@@ -157,6 +157,41 @@ export class ApiService {
     }
   }
 
+  // Création d'exercices
+  static async createExercise(exerciseData: Omit<Exercise, 'id' | 'createdAt' | 'official'>): Promise<Exercise> {
+    const response = await fetch(`${API_BASE_URL}/exercises`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(exerciseData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de la création de l\'exercice');
+    }
+
+    const result = await response.json();
+    return result.data;
+  }
+
+  // Suppression d'exercices
+  static async deleteExercise(exerciseId: string, userId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/exercises/${exerciseId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de la suppression de l\'exercice');
+    }
+  }
+
   private static async getExercisePoints(exerciseId: string): Promise<number> {
     try {
       const exercise = await this.getExerciseById(exerciseId);

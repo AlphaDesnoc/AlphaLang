@@ -1,4 +1,12 @@
+import { AuthGuard } from '../components/AuthGuard';
+
 export function DocumentationPage() {
+  return (
+    <DocumentationContent />
+  );
+}
+
+function DocumentationContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       <div className="container mx-auto px-6 py-12">

@@ -7,12 +7,16 @@ import {
   deleteUser
 } from 'firebase/auth';
 import { auth } from './config';
+import { PermissionService } from './permissions';
+
+export type UserRole = 'user' | 'admin' | 'owner';
 
 export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  role: UserRole;
 }
 
 export class AuthService {
@@ -28,6 +32,13 @@ export class AuthService {
         // Recharger l'utilisateur pour récupérer les nouvelles données
         await user.reload();
       }
+
+      // Créer le profil utilisateur avec rôle dans Firestore
+      const userProfile = await PermissionService.createUserProfile(
+        user.uid, 
+        user.email || email, 
+        displayName
+      );
       
       // Récupérer l'utilisateur mis à jour
       const updatedUser = auth.currentUser;
@@ -36,7 +47,8 @@ export class AuthService {
         uid: updatedUser?.uid || user.uid,
         email: updatedUser?.email || user.email,
         displayName: updatedUser?.displayName || displayName || null,
-        photoURL: updatedUser?.photoURL || user.photoURL
+        photoURL: updatedUser?.photoURL || user.photoURL,
+        role: userProfile.role
       };
     } catch (error: any) {
       throw new Error(this.getErrorMessage(error.code));
@@ -48,12 +60,16 @@ export class AuthService {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // Récupérer le rôle depuis Firestore
+      const role = await PermissionService.getUserRole(user.uid);
       
       return {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
-        photoURL: user.photoURL
+        photoURL: user.photoURL,
+        role
       };
     } catch (error: any) {
       throw new Error(this.getErrorMessage(error.code));
@@ -84,27 +100,64 @@ export class AuthService {
   }
 
   // Obtenir l'utilisateur actuel
-  static getCurrentUser(): AuthUser | null {
+  static async getCurrentUser(): Promise<AuthUser | null> {
     const user = auth.currentUser;
     if (!user) return null;
+
+    // Récupérer le rôle depuis Firestore
+    const role = await PermissionService.getUserRole(user.uid);
     
     return {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoURL: user.photoURL
+      photoURL: user.photoURL,
+      role
+    };
+  }
+
+  // Rafraîchir le profil utilisateur
+  static async refreshUserProfile(): Promise<AuthUser | null> {
+    const user = auth.currentUser;
+    if (!user) return null;
+    
+    // Recharger les données utilisateur depuis Firebase
+    await user.reload();
+
+    // Récupérer le rôle depuis Firestore
+    const role = await PermissionService.getUserRole(user.uid);
+    
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      role
     };
   }
 
   // Observer les changements d'état d'authentification
   static onAuthStateChanged(callback: (user: AuthUser | null) => void) {
-    return auth.onAuthStateChanged((user: User | null) => {
+    return auth.onAuthStateChanged(async (user: User | null) => {
       if (user) {
+        // Vérifier si le profil utilisateur existe dans Firestore
+        let userProfile = await PermissionService.getUserProfile(user.uid);
+        
+        // Si le profil n'existe pas, le créer (pour les utilisateurs existants)
+        if (!userProfile) {
+          userProfile = await PermissionService.createUserProfile(
+            user.uid,
+            user.email || '',
+            user.displayName || undefined
+          );
+        }
+        
         callback({
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
-          photoURL: user.photoURL
+          photoURL: user.photoURL,
+          role: userProfile.role
         });
       } else {
         callback(null);

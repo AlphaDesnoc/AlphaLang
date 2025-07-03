@@ -27,10 +27,25 @@ export class DatabaseService {
         concepts TEXT NOT NULL, -- JSON
         estimatedTime INTEGER NOT NULL,
         points INTEGER NOT NULL,
+        official BOOLEAN NOT NULL DEFAULT 0,
+        createdBy TEXT NOT NULL DEFAULT 'system',
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       )
     `);
+
+    // Ajouter les colonnes manquantes si elles n'existent pas
+    try {
+      this.db.exec(`ALTER TABLE exercises ADD COLUMN official BOOLEAN NOT NULL DEFAULT 0`);
+    } catch (e) {
+      // Colonne existe déjà
+    }
+    
+    try {
+      this.db.exec(`ALTER TABLE exercises ADD COLUMN createdBy TEXT NOT NULL DEFAULT 'system'`);
+    } catch (e) {
+      // Colonne existe déjà
+    }
 
     // Table des utilisateurs
     this.db.exec(`
@@ -121,7 +136,9 @@ export class DatabaseService {
         ],
         concepts: ['afficher', 'chaînes de caractères', 'syntaxe de base'],
         estimatedTime: 5,
-        points: 10
+        points: 10,
+        official: true,
+        createdBy: 'system'
       },
       {
         id: 'variables',
@@ -153,7 +170,9 @@ export class DatabaseService {
         ],
         concepts: ['variables', 'addition', 'afficher'],
         estimatedTime: 8,
-        points: 15
+        points: 15,
+        official: true,
+        createdBy: 'system'
       },
       {
         id: 'functions',
@@ -187,7 +206,9 @@ export class DatabaseService {
         ],
         concepts: ['fonctions', 'paramètres', 'retourner', 'multiplication'],
         estimatedTime: 12,
-        points: 25
+        points: 25,
+        official: true,
+        createdBy: 'system'
       },
       {
         id: 'fibonacci',
@@ -226,7 +247,9 @@ export class DatabaseService {
         ],
         concepts: ['récursion', 'algorithmes', 'cas de base', 'mathématiques'],
         estimatedTime: 25,
-        points: 50
+        points: 50,
+        official: true,
+        createdBy: 'system'
       }
     ];
 
@@ -265,7 +288,7 @@ export class DatabaseService {
 
   // Méthodes pour les exercices
   getAllExercises(): Exercise[] {
-    const rows = this.db.prepare("SELECT * FROM exercises ORDER BY createdAt").all();
+    const rows = this.db.prepare("SELECT * FROM exercises ORDER BY official DESC, createdAt ASC").all();
     return rows.map(this.mapExerciseFromDb);
   }
 
@@ -291,8 +314,8 @@ export class DatabaseService {
       INSERT INTO exercises (
         id, title, description, difficulty, category, instructions,
         starterCode, solution, testCases, hints, concepts,
-        estimatedTime, points, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        estimatedTime, points, official, createdBy, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insert.run(
@@ -309,11 +332,34 @@ export class DatabaseService {
       JSON.stringify(exercise.concepts),
       exercise.estimatedTime,
       exercise.points,
+      exercise.official,
+      exercise.createdBy,
       now,
       now
     );
 
     return { ...exercise, createdAt: now, updatedAt: now };
+  }
+
+  deleteExercise(exerciseId: string): boolean {
+    try {
+      // Supprimer d'abord les soumissions liées
+      const deleteSubmissions = this.db.prepare("DELETE FROM exercise_submissions WHERE exerciseId = ?");
+      deleteSubmissions.run(exerciseId);
+      
+      // Supprimer les progressions liées
+      const deleteProgress = this.db.prepare("DELETE FROM exercise_progress WHERE exerciseId = ?");
+      deleteProgress.run(exerciseId);
+      
+      // Supprimer l'exercice
+      const deleteExercise = this.db.prepare("DELETE FROM exercises WHERE id = ?");
+      const result = deleteExercise.run(exerciseId);
+      
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'exercice:', error);
+      return false;
+    }
   }
 
   // Méthodes pour les soumissions
@@ -364,6 +410,8 @@ export class DatabaseService {
       concepts: JSON.parse(row.concepts),
       estimatedTime: row.estimatedTime,
       points: row.points,
+      official: Boolean(row.official),
+      createdBy: row.createdBy,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
     };

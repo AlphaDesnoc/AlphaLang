@@ -18,6 +18,8 @@ export interface Exercise {
   concepts: string[];
   estimatedTime: number; // en minutes
   points: number;
+  official: boolean; // Indique si l'exercice est officiel (créé par admin/owner)
+  createdBy: string; // UID de l'utilisateur qui a créé l'exercice
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +78,7 @@ export interface CreateExerciseRequest {
   concepts: string[];
   estimatedTime: number;
   points: number;
+  createdBy: string;
 }
 
 export interface UpdateExerciseRequest extends Partial<CreateExerciseRequest> {}

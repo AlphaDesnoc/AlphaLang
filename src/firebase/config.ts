@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Configuration Firebase - À remplacer par vos vraies clés
 const firebaseConfig = {
@@ -17,4 +18,8 @@ const app = initializeApp(firebaseConfig);
 
 // Initialiser Auth
 export const auth = getAuth(app);
+
+// Initialiser Firestore
+export const db = getFirestore(app);
+
 export default app;

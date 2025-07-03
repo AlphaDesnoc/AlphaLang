@@ -97,4 +97,12 @@ export class ExerciseService {
       return [];
     }
   }
+
+  static async createExercise(exerciseData: Omit<Exercise, 'id' | 'createdAt' | 'official'>): Promise<Exercise> {
+    return await ApiService.createExercise(exerciseData);
+  }
+
+  static async deleteExercise(exerciseId: string, userId: string): Promise<void> {
+    return await ApiService.deleteExercise(exerciseId, userId);
+  }
 }

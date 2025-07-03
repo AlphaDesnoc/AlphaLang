@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règles pour la collection users
+    match /users/{userId} {
+      // L'utilisateur peut lire son propre profil
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Seuls les admins/owners peuvent lire tous les profils
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'owner'];
+      
+      // L'utilisateur peut créer son propre profil lors de l'inscription
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        request.resource.data.role == 'user'; // Seul le rôle 'user' peut être auto-assigné
+      
+      // Seuls les admins/owners peuvent modifier les rôles
+      allow update: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'owner'] &&
+        // Un admin ne peut pas modifier un owner ou créer un owner
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner' ||
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+          resource.data.role != 'owner' &&
+          request.resource.data.role != 'owner'));
+      
+      // L'utilisateur peut mettre à jour son propre displayName
+      allow update: if request.auth != null && request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role && // Le rôle ne change pas
+        request.resource.data.email == resource.data.email && // L'email ne change pas
+        request.resource.data.uid == resource.data.uid; // L'UID ne change pas
+      
+      // Seuls les owners peuvent supprimer des utilisateurs
+      allow delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
+    }
+    
+    // Règles par défaut : refuser l'accès à tout le reste
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

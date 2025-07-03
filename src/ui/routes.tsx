@@ -8,9 +8,13 @@ import { ChallengePage } from "./pages/ChallengePage.tsx";
 import { LiveCodePage } from "./pages/LiveCode.tsx";
 import { DocumentationPage } from "./pages/DocumentationPage.tsx";
 import { AccountPage } from "./pages/AccountPage.tsx";
+import { AdminPage } from "./pages/AdminPage.tsx";
 import { ExercisesPage } from "./pages/ExercisesPage.tsx";
 import { ExerciseWorkspace } from "./pages/ExerciseWorkspace.tsx";
+import { CreateExercisePage } from "./pages/CreateExercisePage.tsx";
+import { RoleDebugPage } from "./pages/RoleDebugPage.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
+import { AuthGuard } from "./components/AuthGuard.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
 import { ChallengeDefinition } from "../type.challenge.ts";
 import { useAuth } from "./contexts/AuthContext";
@@ -70,6 +74,12 @@ export const accountRoute = createRoute({
   component: AccountPage,
 });
 
+export const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPage,
+});
+
 export const exercisesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/exercises",
@@ -82,7 +92,27 @@ export const exerciseWorkspaceRoute = createRoute({
   component: ExerciseWorkspace,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute, accountRoute, exercisesRoute, exerciseWorkspaceRoute]);
+export const createExerciseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/exercises/create",
+  component: () => (
+    <AuthGuard>
+      <CreateExercisePage />
+    </AuthGuard>
+  ),
+});
+
+export const roleDebugRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/debug/roles",
+  component: () => (
+    <AuthGuard>
+      <RoleDebugPage />
+    </AuthGuard>
+  ),
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, livecodeRoute, documentationRoute, accountRoute, adminRoute, exercisesRoute, exerciseWorkspaceRoute, createExerciseRoute, roleDebugRoute]);
 
 export const router = createRouter({ routeTree });
 

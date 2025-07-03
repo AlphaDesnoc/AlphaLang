@@ -1,8 +1,9 @@
 
 import { Link } from "@tanstack/react-router";
-import { LangIcon, ChallengeIcon, BookIcon, MenuIcon, XIcon, LogInIcon, LogOutIcon, UserIcon } from "./Icons.tsx";
+import { LangIcon, ChallengeIcon, BookIcon, MenuIcon, XIcon, LogInIcon, LogOutIcon } from "./Icons.tsx";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "./PermissionGuard";
 import { LoginForm } from "./LoginForm";
 
 export function Sidebar() {
@@ -11,6 +12,7 @@ export function Sidebar() {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const { isAdmin } = usePermissions();
 
   // Fermer le dropdown quand la sidebar se ferme
   useEffect(() => {
@@ -133,6 +135,27 @@ export function Sidebar() {
               </span>
             )}
           </Link>
+
+          {/* Lien Administration - seulement pour les admins */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`group flex items-center rounded-lg p-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-all duration-200 ${
+                isOpen ? 'justify-start' : 'justify-center'
+              }`}
+            >
+              <div className="flex items-center justify-center w-6 h-6">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              {isOpen && (
+                <span className="ml-3 font-medium opacity-0 animate-[fadeIn_0.2s_ease-in_0.1s_both]">
+                  Administration
+                </span>
+              )}
+            </Link>
+          )}
         </nav>
 
         {/* Menu utilisateur - visible dans les deux états */}
@@ -188,7 +211,18 @@ export function Sidebar() {
                       <div className="text-sm font-medium text-white truncate">
                         {user.displayName || user.email?.split('@')[0] || 'Utilisateur'}
                       </div>
-                      <div className="text-xs text-slate-400 truncate">{user.email}</div>
+                      <div className="flex items-center space-x-2">
+                        <div className="text-xs text-slate-400 truncate">{user.email}</div>
+                        {(user.role === 'admin' || user.role === 'owner') && (
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            user.role === 'owner' 
+                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}>
+                            {user.role}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <svg 
                       width="16" 
